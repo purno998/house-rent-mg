@@ -7,14 +7,18 @@ function SpendingDialog({unitId, month, monthLabel, onClose, onSaved}) {
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
   const [chargeable, setChargeable] = useState(false);
+  const [forAB, setForAB] = useState(false);
   const [error, setError] = useState(null);
   const [saving, setSaving] = useState(false);
 
   async function save(e) {
     e.preventDefault();
     setSaving(true);
-    const {error} = await supabase.from('monthly_spendings')
-      .insert({unit_id: unitId, month, amount: Number(amount), reason: reason.trim(), chargeable});
+    const {error} = await supabase.from('monthly_spendings').insert({
+      unit_id: unitId, month, amount: Number(amount), reason: reason.trim(), chargeable,
+      // Only general spendings need it; a unit's letter already picks its sheet
+      forAB: unitId ? null : forAB,
+    });
     setSaving(false);
     if (error) setError(error.message);
     else onSaved();
@@ -33,10 +37,15 @@ function SpendingDialog({unitId, month, monthLabel, onClose, onSaved}) {
           <input value={reason} onChange={e => setReason(e.target.value)} pattern=".*\S.*"
                  title="Enter a reason" required/>
         </label>
-        {unitId && (
+        {unitId ? (
           <label className="checkbox">
             <input type="checkbox" checked={chargeable} onChange={e => setChargeable(e.target.checked)}/>
             Charge to tenant (adds it to the bill)
+          </label>
+        ) : (
+          <label className="checkbox">
+            <input type="checkbox" checked={forAB} onChange={e => setForAB(e.target.checked)}/>
+            For the A & B sheet (otherwise C & D)
           </label>
         )}
         {error && <p className="dialog-error">{error}</p>}

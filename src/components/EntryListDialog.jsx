@@ -35,6 +35,7 @@ function EntryListDialog({noun, table, entries, subtitle, onClose, onDeleted}) {
                   <span className="reason">
                     {entry.reason}
                     {entry.chargeable && <span className="tag">Chargeable</span>}
+                    {entry.unit_id === null && <span className="tag">{entry.forAB ? 'A & B' : 'C & D'}</span>}
                   </span>
                 )}
                 <span>{fmtTime.format(new Date(entry.created_at))}</span>

@@ -93,6 +93,8 @@ function Dashboard({session, date, onDateChange}) {
   const totalDue = unitsWithRent.reduce((sum, u) => sum + Math.max(u.due, 0), 0);
   // e.g. "AB" -> units 1A, 1B, 2A, ...
   const sheetUnits = (letters) => unitsWithRent.filter(u => letters.includes(u.id.slice(-1)));
+  // General spendings marked forAB go on the A & B sheet, the rest (incl. unset) on C & D
+  const sheetGeneralSpendings = (letters) => generalSpendings.filter(s => Boolean(s.forAB) === (letters === 'AB'));
   // {kind: 'bills'} or {kind: 'sheet', letters}; rendered only while printing
   const [printJob, setPrintJob] = useState(null);
 
@@ -318,7 +320,8 @@ function Dashboard({session, date, onDateChange}) {
         <Printable>
           {printJob.kind === 'bills'
             ? <PrintBills units={unitsWithRent} date={date}/>
-            : <PrintSheet units={sheetUnits(printJob.letters)} date={date}/>}
+            : <PrintSheet units={sheetUnits(printJob.letters)}
+                          generalSpendings={sheetGeneralSpendings(printJob.letters)} date={date}/>}
         </Printable>
       )}
     </>
