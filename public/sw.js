@@ -2,16 +2,19 @@ const SHELL = 'shell-v1';
 const STATIC = 'static-v1';
 // Also cleared by the app on logout
 const DATA = 'supabase-data';
+// The app's root path, e.g. "/house-rent-mg/" on GitHub Pages; sw.js sits there
+const BASE = new URL('./', self.location).pathname;
+const ASSETS = `${BASE}assets/`;
 
-// Caches index.html plus the hashed /assets files it references, and drops assets of older builds
+// Caches index.html plus the hashed assets files it references, and drops assets of older builds
 async function cacheShell(response) {
   const html = await response.clone().text();
-  const assets = [...new Set(html.match(/\/assets\/[^"'\s>]+/g) ?? [])];
+  const assets = [...new Set(html.match(new RegExp(`${ASSETS}[^"'\\s>]+`, 'g')) ?? [])];
   const cache = await caches.open(SHELL);
-  await cache.put('/', response);
+  await cache.put(BASE, response);
   for (const request of await cache.keys()) {
     const path = new URL(request.url).pathname;
-    if (path.startsWith('/assets/') && !assets.includes(path)) await cache.delete(request);
+    if (path.startsWith(ASSETS) && !assets.includes(path)) await cache.delete(request);
   }
   await Promise.all(assets.map(async (asset) => (await cache.match(asset)) || cache.add(asset)));
 }
@@ -39,7 +42,7 @@ async function cacheFirst(request, cacheName) {
 }
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(fetch('/').then(cacheShell).then(() => self.skipWaiting()));
+  event.waitUntil(fetch(BASE).then(cacheShell).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (event) => {
@@ -58,7 +61,7 @@ self.addEventListener('fetch', (event) => {
         if (response.ok) event.waitUntil(cacheShell(response.clone()));
         return response;
       })
-      .catch(async () => (await caches.match('/')) ?? Response.error()));
+      .catch(async () => (await caches.match(BASE)) ?? Response.error()));
   } else if (url.origin === location.origin || /^fonts\.(googleapis|gstatic)\.com$/.test(url.hostname)) {
     event.respondWith(cacheFirst(request, STATIC));
   } else if (url.hostname.endsWith('.supabase.co') && url.pathname.startsWith('/rest/')) {

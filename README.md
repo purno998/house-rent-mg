@@ -49,6 +49,11 @@ The app expects these tables in the Supabase `public` schema, each with row-leve
 
 ## Deploying
 
-`npm run build` produces a static site in `dist/` that any static host can serve. It must be served over HTTPS for the app to be installable and for offline support to work.
+Every push to `main` builds the app and deploys it to GitHub Pages (`.github/workflows/deploy.yml`), at https://purno998.github.io/house-rent-mg/. One-time setup on GitHub:
+
+1. **Settings → Secrets and variables → Actions:** add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` as repository secrets.
+2. **Settings → Pages:** set *Source* to *GitHub Actions*.
+
+The app is built for the `/house-rent-mg/` path (`base` in `vite.config.js`). To host it at the root of a domain instead, change `base` to `/`. Wherever it's hosted, it must be served over HTTPS for the app to be installable and for offline support to work.
 
 The service worker (`public/sw.js`) only runs in production builds. It always fetches the latest app version when online, so new deploys show up without extra steps. If you change the icons or `manifest.webmanifest`, bump `STATIC = 'static-v1'` in `public/sw.js` so phones fetch the new files.
