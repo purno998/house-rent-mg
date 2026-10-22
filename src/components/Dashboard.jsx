@@ -1,6 +1,7 @@
 import {useEffect, useState, useSyncExternalStore} from 'react'
 import {supabase} from "../utils/supabase.js";
-import {fmt, monthKey, paymentTotal, RENT_COLS, rentTotal} from "../utils/rents.js";
+import {fmt, monthKey, paymentTotal, RENT_COLS} from "../utils/rents.js";
+import {billTotal, chargeableSpendings} from "../utils/bills.js";
 import {createMonthlyRents} from "../utils/createRents.js";
 import PaymentDialog from "./PaymentDialog.jsx";
 import EntryListDialog from "./EntryListDialog.jsx";
@@ -166,7 +167,8 @@ function Dashboard({session, date, onDateChange}) {
           // Not `unit.rent`: that's the unit's base rent column
           unit.monthlyRent = rent;
           unit.payments = payments;
-          unit.total = rentTotal(rent);
+          // Includes chargeable spendings, matching the printed bill
+          unit.total = billTotal(unit);
           unit.payment = paymentTotal(payments);
           unit.due = unit.total - unit.payment;
         }
@@ -277,7 +279,10 @@ function Dashboard({session, date, onDateChange}) {
             </div>
             <div className="card-body">
               {RENT_COLS.filter((rc) => unit.monthlyRent?.[rc]).map((rc) => (
-                <div><span>{rc}</span>: {unit.monthlyRent[rc]}</div>
+                <div key={rc}><span>{rc}</span>: {unit.monthlyRent[rc]}</div>
+              ))}
+              {chargeableSpendings(unit).map((s) => (
+                <div key={s.id}><span>{s.reason}</span>: {s.amount}</div>
               ))}
             </div>
             <div className="card-footer">
