@@ -1,0 +1,25 @@
+.printable {
+    display: none;
+}
+
+@page {
+    size: A4;
+    margin: 15mm;
+}
+
+@media print {
+    body {
+        margin: 0;
+    }
+    body:has(> .printable) > #root {
+        display: none;
+    }
+
+    .printable {
+        display: block;
+        color: #000;
+        background: #fff;
+        font-family: "Noto Sans Bengali", sans-serif;
+        font-size: 14pt;
+    }
+}

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#aa3bff"/>
+  <!-- Kept inside the central 60% so Android's maskable crop never clips it -->
+  <path fill="#fff" d="M256 146 384 256h-36v112h-62v-76h-60v76h-62V256h-36z"/>
+</svg>

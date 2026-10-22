@@ -1,0 +1,37 @@
+@media print {
+    /* A4 is 297mm high minus 30mm of page margin; a little less leaves slack for rounding */
+    .bills-page {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: 1fr 1fr;
+        column-gap: 18mm;
+        height: 264mm;
+        break-after: page;
+    }
+    .bills-page:last-child {
+        break-after: auto;
+    }
+
+    .bill {
+        padding-top: 8mm;
+        break-inside: avoid;
+    }
+    .bill-row {
+        display: grid;
+        grid-template-columns: 40mm 5mm 1fr;
+        align-items: baseline;
+        padding: 1.6mm 0;
+    }
+    .bill-row .amount {
+        width: 26mm;
+        text-align: right;
+    }
+    .bill-total {
+        margin-top: 2mm;
+        padding-top: 3mm;
+        border-top: 1px solid #999;
+    }
+    .bill-total span:first-child {
+        font-weight: 700;
+    }
+}

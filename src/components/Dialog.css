@@ -1,0 +1,97 @@
+.dialog {
+    width: min(calc(100% - 32px), 360px);
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg);
+    color: var(--text);
+    box-shadow: var(--shadow);
+}
+.dialog::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.dialog-body {
+    padding: 24px 20px 20px;
+    text-align: left;
+}
+.dialog-body,
+.dialog-body > form {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.dialog h2 {
+    margin: 0;
+}
+.dialog-sub {
+    margin-top: -10px;
+    font-size: 0.9rem;
+}
+
+.dialog label {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-h);
+}
+/* 1rem is >= 16px at every breakpoint, which stops iOS zooming in on focus */
+.dialog input {
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text-h);
+    font: inherit;
+    font-size: 1rem;
+}
+.dialog label.checkbox {
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    min-height: 44px;
+    cursor: pointer;
+}
+.dialog input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    accent-color: var(--accent);
+}
+.dialog input:focus {
+    outline: none;
+    border-color: var(--accent-border);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+}
+
+.dialog-actions {
+    display: flex;
+    gap: 10px;
+}
+.dialog-actions button {
+    flex: 1;
+    min-height: 44px;
+    border: none;
+    border-radius: 8px;
+    background: var(--accent);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+}
+.dialog-actions button.secondary {
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-h);
+}
+.dialog-actions button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.dialog-error {
+    font-size: 0.85rem;
+    color: #e5484d;
+}
