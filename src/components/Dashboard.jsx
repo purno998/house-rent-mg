@@ -86,6 +86,10 @@ function Dashboard({session, date, onDateChange}) {
   const monthLabel = `${MONTHS[date.getMonth()]} ${date.getFullYear()}`;
   const unitsWithoutRent = units.filter(u => !u.monthlyRent);
   const unitsWithRent = units.filter(u => u.monthlyRent);
+  const totalPayments = paymentTotal(units.flatMap(u => u.payments ?? []));
+  const totalSpendings = paymentTotal([...generalSpendings, ...units.flatMap(u => u.spendings ?? [])]);
+  // A unit that overpaid doesn't reduce what the others still owe
+  const totalDue = unitsWithRent.reduce((sum, u) => sum + Math.max(u.due, 0), 0);
   // e.g. "AB" -> units 1A, 1B, 2A, ...
   const sheetUnits = (letters) => unitsWithRent.filter(u => letters.includes(u.id.slice(-1)));
   // {kind: 'bills'} or {kind: 'sheet', letters}; rendered only while printing
@@ -230,6 +234,11 @@ function Dashboard({session, date, onDateChange}) {
             },
           },
         ]}/>
+      </div>
+      <div className="summary">
+        <span>Payments <b>{fmt(totalPayments)}</b></span>
+        <span>Spendings <b>{fmt(totalSpendings)}</b></span>
+        <span className={totalDue > 0 ? 'is-due' : undefined}>Due <b>{fmt(totalDue)}</b></span>
       </div>
       {!online && (
         <p className="offline">
