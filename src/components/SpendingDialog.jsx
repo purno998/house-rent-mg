@@ -17,7 +17,7 @@ function SpendingDialog({unitId, month, monthLabel, onClose, onSaved}) {
     const {error} = await supabase.from('monthly_spendings').insert({
       unit_id: unitId, month, amount: Number(amount), reason: reason.trim(), chargeable,
       // Only general spendings need it; a unit's letter already picks its sheet
-      forAB: unitId ? null : forAB,
+      for_ab: unitId ? null : forAB,
     });
     setSaving(false);
     if (error) setError(error.message);
