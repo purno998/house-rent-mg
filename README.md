@@ -36,16 +36,43 @@ npm run dev
 
 ## Database
 
-The app expects these tables in the Supabase `public` schema, each with row-level security allowing the `authenticated` role full access. Users are created in Supabase Auth (email and password).
+The schema is version-controlled in `supabase/`:
 
-| Table               | Purpose                                     | Key columns                                                                                                       |
-|---------------------|---------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
-| `units`             | Flats and their regular charges             | `id` (e.g. `1A`), `rent`, `electricity`, `water`, `gas`, `garbage`, `service_charge`                             |
-| `monthly_rents`     | A unit's bill for a month                   | primary key (`unit_id`, `month`), the charge columns above, `due` (carried over), `note`                          |
-| `rent_payments`     | Payments received                           | `unit_id`, `month`, `amount`, `created_at`; (`unit_id`, `month`) references `monthly_rents`                       |
-| `monthly_spendings` | Money spent, per unit or for the building   | `unit_id` (null for general), `month`, `amount`, `reason`, `chargeable`, `created_at`                             |
+- `supabase/schemas/*.sql` — declarative source of truth, one file per table.
+- `supabase/migrations/*.sql` — generated from those files; this is what is applied.
 
-`month` is always the first day of the month (e.g. `2026-10-01`). Payments and unit spendings can only be added once the unit has a `monthly_rents` row for that month.
+| Table / view          | Purpose                                     | Key columns                                                                                     |
+|-----------------------|---------------------------------------------|--------------------------------------------------------------------------------------------------|
+| `units`               | Flats and their regular charges             | `id` (e.g. `1A`), `rent`, `electricity`, `water`, `gas`, `garbage`, `service_charge`              |
+| `monthly_rents`       | A unit's bill for a month                   | primary key (`unit_id`, `month`), the charge columns above, `due` (carried over), `note`          |
+| `rent_payments`       | Payments received                           | `unit_id`, `month`, `amount`, `created_at`; (`unit_id`, `month`) references `monthly_rents`       |
+| `monthly_spendings`   | Money spent, per unit or for the building   | `unit_id` (null for general), `month`, `amount`, `reason`, `chargeable`, `for_ab`, `created_at`   |
+| `unit_month_totals`   | **View.** The one definition of a bill      | `unit_id`, `month`, `rent_total`, `extras`, `total`, `paid`, `remaining`                          |
+
+`public.create_monthly_rents(p_month)` creates a month's rent rows for units that lack one,
+carrying over each unit's `remaining` from the previous month. It is atomic and idempotent.
+
+`month` is always the first day of the month, enforced by a CHECK constraint. Payments and unit
+spendings can only be added once the unit has a `monthly_rents` row for that month. Row-level
+security is enabled on every table and grants access to the `authenticated` role only; `anon`
+has no grants.
+
+### Working on the schema
+
+```sh
+supabase start                                              # local Postgres in Docker
+supabase db reset                                           # rebuild local from migrations
+# edit supabase/schemas/*.sql, then:
+supabase db schema declarative sync --name <change_name>    # generate a migration
+```
+
+Review every generated migration before applying it. Two known traps:
+
+- `declarative sync` re-adds Supabase's default `anon` grants. `supabase/schemas/99_revoke_anon.sql`
+  declares the revocation — check generated SQL for `TO "anon"` and remove it.
+- **The direct database host resolves to IPv6 only.** On an IPv4-only network, `supabase db pull`
+  and `db push` hang with no error. Use a pooler connection string via `--db-url`, or apply
+  migrations through the Supabase MCP server.
 
 ## Deploying
 
