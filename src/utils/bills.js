@@ -1,5 +1,3 @@
-import {rentTotal} from "./rents.js";
-
 const bnNumber = new Intl.NumberFormat('bn-BD');
 const bnPlain = new Intl.NumberFormat('bn-BD', {useGrouping: false});
 const bnMonthName = new Intl.DateTimeFormat('bn-BD', {month: 'long'});
@@ -25,9 +23,5 @@ export const CHARGES = [
 ];
 
 export const chargeableSpendings = (unit) => unit.spendings.filter(s => s.chargeable);
-
-export const extraCharges = (unit) => chargeableSpendings(unit).reduce((sum, s) => sum + s.amount, 0);
-
-export const billTotal = (unit) => rentTotal(unit.monthlyRent) + extraCharges(unit);
 
 export const byUnitId = (a, b) => a.id.localeCompare(b.id);

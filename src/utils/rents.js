@@ -1,13 +1,5 @@
 export const RENT_COLS = ['rent', 'electricity', 'water', 'gas', 'garbage', 'service_charge', 'due'];
 
-export function rentTotal(rent) {
-  let total = 0;
-  for (const field of RENT_COLS) {
-    total += (rent[field] ? rent[field] : 0);
-  }
-  return total;
-}
-
 export function paymentTotal(payments) {
   let total = 0;
   for (const payment of payments) {
