@@ -1,7 +1,7 @@
 import {useEffect, useState, useSyncExternalStore} from 'react'
 import {supabase} from "../utils/supabase.js";
 import {fmt, monthKey, paymentTotal, RENT_COLS} from "../utils/rents.js";
-import {billTotal, chargeableSpendings} from "../utils/bills.js";
+import {chargeableSpendings} from "../utils/bills.js";
 import {createMonthlyRents} from "../utils/createRents.js";
 import PaymentDialog from "./PaymentDialog.jsx";
 import EntryListDialog from "./EntryListDialog.jsx";
@@ -93,8 +93,8 @@ function Dashboard({session, date, onDateChange}) {
   const totalDue = unitsWithRent.reduce((sum, u) => sum + Math.max(u.due, 0), 0);
   // e.g. "AB" -> units 1A, 1B, 2A, ...
   const sheetUnits = (letters) => unitsWithRent.filter(u => letters.includes(u.id.slice(-1)));
-  // General spendings marked forAB go on the A & B sheet, the rest (incl. unset) on C & D
-  const sheetGeneralSpendings = (letters) => generalSpendings.filter(s => Boolean(s.forAB) === (letters === 'AB'));
+  // General spendings marked for_ab go on the A & B sheet, the rest (incl. unset) on C & D
+  const sheetGeneralSpendings = (letters) => generalSpendings.filter(s => Boolean(s.for_ab) === (letters === 'AB'));
   // {kind: 'bills'} or {kind: 'sheet', letters}; rendered only while printing
   const [printJob, setPrintJob] = useState(null);
 
@@ -110,7 +110,7 @@ function Dashboard({session, date, onDateChange}) {
   async function createRents() {
     if (!window.confirm(`Create ${monthLabel} rent for ${unitsWithoutRent.length} unit(s)?`)) return;
     try {
-      const rows = await createMonthlyRents(unitsWithoutRent, date);
+      const rows = await createMonthlyRents(date);
       reloadData();
       const negative = rows.filter(r => r.due < 0);
       if (negative.length) {
@@ -123,64 +123,41 @@ function Dashboard({session, date, onDateChange}) {
   }
 
   useEffect(() => {
-    async function getUnits() {
-      const {data, error, status} = await supabase.from('units').select();
-      console.log({data, error, status, user: session.user.email});
-      if (error) setError({month: firstDayOfMonth, message: error.message});
-      else if (data) {
-        return data;
+    // One query for everything hanging off a unit, one for the general spendings, which
+    // have no unit to hang off. Both are GETs, so the service worker can cache them.
+    const select = '*,monthly_rents(*,rent_payments(*),monthly_spendings(*)),' +
+      'unit_month_totals(total,extras,paid,remaining)';
+    Promise.all([
+      supabase.from('units').select(select)
+        .eq('monthly_rents.month', firstDayOfMonth)
+        .eq('unit_month_totals.month', firstDayOfMonth),
+      supabase.from('monthly_spendings').select()
+        .eq('month', firstDayOfMonth).is('unit_id', null).order('created_at'),
+    ]).then(([unitRows, general]) => {
+      const failed = unitRows.error ?? general.error;
+      if (failed) {
+        setError({month: firstDayOfMonth, message: failed.message});
+        return;
       }
-    }
-
-    async function getRents() {
-      const {data, error, status} = await supabase.from('monthly_rents').select().eq('month', firstDayOfMonth);
-      console.log({data, error, status, user: session.user.email});
-      if (error) setError({month: firstDayOfMonth, message: error.message});
-      else if (data) {
-        return data;
-      }
-    }
-
-    async function getPayments() {
-      const {data, error, status} = await supabase.from('rent_payments').select().eq('month', firstDayOfMonth).order('created_at');
-      console.log({data, error, status, user: session.user.email});
-      if (error) setError({month: firstDayOfMonth, message: error.message});
-      else if (data) {
-        return data;
-      }
-    }
-
-    async function getSpendings() {
-      const {data, error, status} = await supabase.from('monthly_spendings').select().eq('month', firstDayOfMonth).order('created_at');
-      console.log({data, error, status, user: session.user.email});
-      if (error) setError({month: firstDayOfMonth, message: error.message});
-      else if (data) {
-        return data;
-      }
-    }
-
-    Promise.all([getUnits(), getRents(), getPayments(), getSpendings()]).then(result => {
-      for (const unit of result[0]) {
-        const rent = result[1].find(r => r.unit_id === unit.id);
-        const payments = result[2].filter(r => r.unit_id === unit.id);
-        unit.spendings = result[3].filter(s => s.unit_id === unit.id);
-
-        if (rent) {
+      const byTime = (a, b) => a.created_at.localeCompare(b.created_at);
+      for (const unit of unitRows.data) {
+        const rent = unit.monthly_rents[0];
+        const totals = unit.unit_month_totals[0];
+        unit.payments = rent ? [...rent.rent_payments].sort(byTime) : [];
+        unit.spendings = rent ? [...rent.monthly_spendings].sort(byTime) : [];
+        if (rent && totals) {
           // Not `unit.rent`: that's the unit's base rent column
           unit.monthlyRent = rent;
-          unit.payments = payments;
-          // Includes chargeable spendings, matching the printed bill
-          unit.total = billTotal(unit);
-          unit.payment = paymentTotal(payments);
-          unit.due = unit.total - unit.payment;
+          // From unit_month_totals, so the bill total is defined in exactly one place
+          unit.total = totals.total;
+          unit.extras = totals.extras;
+          unit.payment = totals.paid;
+          unit.due = totals.remaining;
         }
       }
-
-      console.log(result[0]);
-      setUnits(result[0]);
-      setGeneralSpendings(result[3].filter(s => s.unit_id === null));
-    }).catch(error => {
-      console.log(error);
+      setUnits(unitRows.data);
+      setGeneralSpendings(general.data);
+    }).catch(() => {
       // Don't leave the previous month's cards under the new month's name
       setUnits([]);
       setGeneralSpendings([]);

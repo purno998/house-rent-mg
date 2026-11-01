@@ -1,6 +1,6 @@
 import './PrintSheet.css'
 import {paymentTotal} from "../utils/rents.js";
-import {billTotal, bnMonth, bnUnitId, byUnitId, CHARGES, extraCharges, taka} from "../utils/bills.js";
+import {bnMonth, bnUnitId, byUnitId, CHARGES, taka} from "../utils/bills.js";
 
 // The expense table is padded with blank rows up to this, for handwritten extras
 const MIN_EXPENSE_ROWS = 10;
@@ -16,7 +16,7 @@ function PrintSheet({units, generalSpendings, date}) {
   const blankRows = Math.max(MIN_EXPENSE_ROWS - expenses.length, 0);
   // Optional columns only appear when some unit on the sheet uses them
   const charges = CHARGES.filter(([key, , always]) => always || sorted.some(u => u.monthlyRent[key]));
-  const hasExtras = sorted.some(u => extraCharges(u));
+  const hasExtras = sorted.some(u => u.extras);
 
   return (
     <section className="sheet">
@@ -37,9 +37,9 @@ function PrintSheet({units, generalSpendings, date}) {
             <tr key={unit.id}>
               <td className="unit">{bnUnitId(unit.id)}</td>
               {charges.map(([key]) => <td key={key}>{taka(unit.monthlyRent[key])}</td>)}
-              {hasExtras && <td>{taka(extraCharges(unit))}</td>}
+              {hasExtras && <td>{taka(unit.extras)}</td>}
               <td>{taka(unit.monthlyRent.due)}</td>
-              <td>{taka(billTotal(unit))}</td>
+              <td>{taka(unit.total)}</td>
               <td/>
             </tr>
           ))}

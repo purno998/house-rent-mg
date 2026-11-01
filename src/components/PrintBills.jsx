@@ -1,5 +1,5 @@
 import './PrintBills.css'
-import {billTotal, bnMonth, bnUnitId, byUnitId, CHARGES, chargeableSpendings, taka} from "../utils/bills.js";
+import {bnMonth, bnUnitId, byUnitId, CHARGES, chargeableSpendings, taka} from "../utils/bills.js";
 
 function Bill({unit, month}) {
   const rent = unit.monthlyRent;
@@ -23,7 +23,7 @@ function Bill({unit, month}) {
       <div className="bill-row bill-total">
         <span>মোট</span>
         <span>:</span>
-        <span className="amount">{taka(billTotal(unit))}</span>
+        <span className="amount">{taka(unit.total)}</span>
       </div>
     </div>
   );
