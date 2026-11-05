@@ -5,7 +5,7 @@ import {bnMonth, bnUnitId, byUnitId, CHARGES, taka} from "../utils/bills.js";
 // The expense table is padded with blank rows up to this, for handwritten extras
 const MIN_EXPENSE_ROWS = 10;
 
-// Monthly collection sheet: one row per unit with blank পাওনা/আদায় to fill in by hand,
+// Monthly collection sheet: one row per unit with পাওনা (remaining due),
 // then the month's general spendings and the sheet's unit spendings
 function PrintSheet({units, generalSpendings, date}) {
   const sorted = [...units].sort(byUnitId);
@@ -40,12 +40,12 @@ function PrintSheet({units, generalSpendings, date}) {
               {hasExtras && <td>{taka(unit.extras)}</td>}
               <td>{taka(unit.monthlyRent.due)}</td>
               <td>{taka(unit.total)}</td>
-              <td/>
+              <td>{taka(unit.due)}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p>মোট আদায়:</p>
+      <p>মোট আদায়: {taka(sorted.reduce((sum, u) => sum + u.payment, 0))}</p>
 
       <h2>খরচ</h2>
       <table className="expenses">
